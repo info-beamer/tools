@@ -7,8 +7,10 @@ and connect to it using any VNC viewer.
 
 To compile, first install libvncserver-dev, then type make.
 
+```
 $ apt-get install libvncserver-dev
 $ make
+```
 
 This VNC Server is based on code by Peter Hanzel 
 https://github.com/hanzelpeter/dispmanx_vnc
