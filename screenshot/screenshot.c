@@ -41,6 +41,15 @@
 #endif
 
 int main(int argc, char *argv[]) {
+    int quality = 75;
+    if (argc == 2) {
+        quality = atoi(argv[1]);
+        if (quality < 10 || quality > 100) {
+            fprintf(stderr, "invalid quality. must be between 10 and 100\n");
+            return 1;
+        }
+    }
+
     bcm_host_init();
 
     uint32_t screen = 0;
@@ -90,7 +99,7 @@ int main(int argc, char *argv[]) {
     cinfo.in_color_space = JCS_RGB;
 
     jpeg_set_defaults(&cinfo);
-    jpeg_set_quality(&cinfo, 20, TRUE);
+    jpeg_set_quality(&cinfo, quality, TRUE);
     jpeg_start_compress(&cinfo, TRUE);
 
     int row_stride = cinfo.image_width * 3;
