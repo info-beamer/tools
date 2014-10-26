@@ -7,6 +7,9 @@ LDFLAGS +=  -L/opt/vc/lib/ -lbcm_host -lvcos -lvchiq_arm -lpthread -lrt -ljpeg
 screenshot: screenshot.c
 	$(CC) $(CFLAGS) $(LDFLAGS) $< -o $@
 
+install: screenshot
+	install -D -o root -g root -m 755 $< /usr/local/bin/$<
+
 clean:
 	rm -f screenshot
 
