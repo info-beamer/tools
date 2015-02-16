@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
         unsigned int r = 0, g = 0, b = 0;
         for (int y = 0; y < info.height; y++) {
             const unsigned char *base = image + y * pitch;
-            for (int x = 0; x < info.width; x += 3) {
+            for (int x = 0; x < info.width * 3; x += 3) {
                 const unsigned char *ptr = base + x;
                 r += *(ptr+0);
                 g += *(ptr+1);
