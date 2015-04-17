@@ -194,8 +194,7 @@ class InfoBeamerQuery(object):
                 raise InfoBeamerQueryException("Cannot connect to node %s" % self._path)
             sock = self._ib._sock
             sock.settimeout(None)
-            self._ib._reset(close=False) # we take ownership
-            return sock
+            return self._ib._conn
 
         def __repr__(self):
             return "<info-beamer@%s/%s>" % (self._conn.addr, self._path)
