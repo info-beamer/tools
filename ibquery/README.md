@@ -18,8 +18,8 @@ Example: Query info-beamer memory usage
     ib = ibquery.InfoBeamerQuery("127.0.0.1")
     print "The info-beamer process uses %dkb memory" % ib.resources.memory
 
-Example: Query memory usage of each nodes
------------------------------------------
+Example: Query memory usage of each node
+----------------------------------------
 
     import ibquery
     ib = ibquery.InfoBeamerQuery("127.0.0.1")
