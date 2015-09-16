@@ -1,20 +1,20 @@
 # This program is licensed under the BSD 2-Clause License:
-# 
+#
 # Copyright (c) 2015, Florian Wesch <fw@dividuum.de>
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
 # met:
-# 
+#
 #     Redistributions of source code must retain the above copyright
-#     notice, this list of conditions and the following disclaimer. 
-# 
+#     notice, this list of conditions and the following disclaimer.
+#
 #     Redistributions in binary form must reproduce the above copyright
 #     notice, this list of conditions and the following disclaimer in the
 #     documentation and/or other materials provided with the
-#     distribution.  
-# 
+#     distribution.
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
 # IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
 # THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -29,10 +29,11 @@
 
 import re
 import socket
+from collections import namedtuple
 
 class InfoBeamerQueryException(Exception):
     pass
- 
+
 class InfoBeamerQuery(object):
     def __init__(self, host, port=4444):
         self._sock = None
@@ -121,41 +122,64 @@ class InfoBeamerQuery(object):
     def close(self):
         self._reset()
 
-    @property 
+    @property
     def ping(self):
+        "tests if info-beamer is reachable"
         return self._send_cmd(
             "0.6", "*query/*ping",
         ) == "pong"
 
-    @property 
+    @property
     def uptime(self):
+        "returns the uptime in seconds"
         return int(self._send_cmd(
             "0.6", "*query/*uptime",
         ))
 
-    @property 
+    @property
     def version(self):
+        "returns the running info-beamer version"
         return self._send_cmd(
             "0.6", "*query/*version",
         )
 
-    @property 
+    @property
     def fps(self):
+        "returns the FPS of the top level node"
         return float(self._send_cmd(
             "0.6", "*query/*fps",
         ))
 
-    @property 
+    ResourceUsage = namedtuple("ResourceUsage", "user_time system_time memory")
+    @property
+    def resources(self):
+        "returns information about used resources"
+        return self.ResourceUsage._make(int(v) for v in self._send_cmd(
+            "0.6", "*query/*resources",
+        ).split(','))
+
+    ScreenSize = namedtuple("ScreenSize", "width height")
+    @property
     def screen(self):
-        return map(int, self._send_cmd(
+        "returns the native screen size"
+        return self.ScreenSize._make(int(v) for v in self._send_cmd(
             "0.8.1", "*query/*screen",
         ).split(','))
 
-    @property 
-    def resources(self):
-        return map(int, self._send_cmd(
-            "0.6", "*query/*resources",
-        ).split(','))
+    @property
+    def runid(self):
+        "returns a unique run id that changes with every restart of info-beamer"
+        return self._send_cmd(
+            "0.9.0", "*query/*runid",
+        )
+
+    @property
+    def nodes(self):
+        "returns a list of nodes"
+        nodes = self._send_cmd(
+            "0.9.3", "*query/*nodes",
+        ).split(',')
+        return [] if not nodes[0] else nodes
 
     class Node(object):
         def __init__(self, ib, path):
@@ -164,29 +188,20 @@ class InfoBeamerQuery(object):
 
         @property
         def mem(self):
+            "returns the Lua memory usage of this node"
             return int(self._ib._send_cmd(
                 "0.6", "*query/*mem/%s" % self._path
             ))
 
         @property
         def fps(self):
+            "returns the framerate of this node"
             return float(self._ib._send_cmd(
                 "0.6", "*query/*fps/%s" % self._path
             ))
 
-        @property
-        def has_error(self):
-            return bool(int(self._ib._send_cmd(
-                "0.8.2", "*query/*has_error/%s" % self._path,
-            )))
-
-        @property
-        def error(self):
-            return self._ib._send_cmd(
-                "0.8.2", "*query/*error/%s" % self._path, multiline=True
-            )
-
         def io(self, raw=True):
+            "creates a tcp connection to this node"
             status = self._ib._send_cmd(
                 "0.6", "%s%s" % ("*raw/" if raw else '', self._path),
             )
@@ -196,6 +211,20 @@ class InfoBeamerQuery(object):
             sock.settimeout(None)
             return self._ib._conn
 
+        @property
+        def has_error(self):
+            "queries the error flag"
+            return bool(int(self._ib._send_cmd(
+                "0.8.2", "*query/*has_error/%s" % self._path,
+            )))
+
+        @property
+        def error(self):
+            "returns the last Lua traceback"
+            return self._ib._send_cmd(
+                "0.8.2", "*query/*error/%s" % self._path, multiline=True
+            )
+
         def __repr__(self):
             return "<info-beamer@%s/%s>" % (self._conn.addr, self._path)
 
@@ -204,7 +233,7 @@ class InfoBeamerQuery(object):
 
     def __repr__(self):
         return "<info-beamer@%s>" % self.addr
- 
+
 if __name__ == "__main__":
     ib = InfoBeamerQuery("127.0.0.1")
     print "%s is running %s. current fps: %d, uptime: %dsec" % (ib.addr, ib.version, ib.fps, ib.uptime)
