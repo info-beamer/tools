@@ -137,6 +137,13 @@ class InfoBeamerQuery(object):
         ))
 
     @property
+    def objects(self):
+        "returns the number of allocated info-beamer objects"
+        return int(self._send_cmd(
+            "0.9.4", "*query/*objects",
+        ))
+
+    @property
     def version(self):
         "returns the running info-beamer version"
         return self._send_cmd(
@@ -235,5 +242,6 @@ class InfoBeamerQuery(object):
         return "<info-beamer@%s>" % self.addr
 
 if __name__ == "__main__":
-    ib = InfoBeamerQuery("127.0.0.1")
+    import sys
+    ib = InfoBeamerQuery(sys.argv[1] if len(sys.argv) > 1 else "127.0.0.1")
     print "%s is running %s. current fps: %d, uptime: %dsec" % (ib.addr, ib.version, ib.fps, ib.uptime)
