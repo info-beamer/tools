@@ -18,3 +18,5 @@ sudo apt-get install libjpeg8-dev
 ```
 
 Then just type 'make' in the showjpeg directory you cloned from github.
+If you need a similar tool to display PNG files, have a look at
+[Andrews repository](https://github.com/AndrewFromMelbourne/raspidmx/tree/master/pngview).
