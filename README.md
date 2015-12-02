@@ -6,6 +6,8 @@ working with info-beamer pi:
 
 screenshot - capture pi screenshot and save as JPEG
 
+showjpeg - shows a single JPEG image in fullscreen using dispmanx
+
 visual-watchdog - capture pi output and triggers if the output stays unchanged for too long
 
 vncserver - a minimal vnc server for the raspberry
