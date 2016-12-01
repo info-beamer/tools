@@ -233,7 +233,7 @@ class InfoBeamerQuery(object):
             )
 
         def __repr__(self):
-            return "<info-beamer@%s/%s>" % (self._conn.addr, self._path)
+            return "%s/%s" % (self._ib, self._path)
 
     def node(self, node):
         return self.Node(self, node)
