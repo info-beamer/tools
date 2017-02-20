@@ -16,7 +16,7 @@ To change the quality level just provide an parameter:
 $ ./screenshot 90 > snapshot.jpg
 ```
 
-## building
+## Building
 
 You will need to install libjpeg before you build the program. On Raspbian
 
