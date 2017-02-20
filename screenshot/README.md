@@ -20,6 +20,8 @@ $ ./screenshot 90 > snapshot.jpg
 
 You will need to install libjpeg before you build the program. On Raspbian
 
-sudo apt-get install libjpeg8-dev
+```
+$ sudo apt-get install libjpeg8-dev
+```
 
-Then just type 'make' in the screenshot directory you cloned from github.
+Then just type `make` in the screenshot directory you cloned from github.
