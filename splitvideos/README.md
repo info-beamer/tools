@@ -9,4 +9,5 @@ File | Purpose
 [ib_playlist.py](ib_playlist.py) | Put a playlist in a "setup" from the asset library based upon a regexp
 [info_beamer-template.ini](info_beamer-template.ini) | Template for configuration file to save authentication keys and setups
 [InfoBeamer.py](InfoBeamer.py) | Python abstraction for interfacing with the info-beamer REST api
+[split-videos.sh](split-videos.sh) | Bash script for using ffmpeg to split a video into n-second pieces at key-frames
 [trim-videos.sh](trim-videos.sh) | Bash script for using ffmpeg to trim a list of videos to the same length
