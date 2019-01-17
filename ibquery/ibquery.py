@@ -53,7 +53,7 @@ class InfoBeamerQuery(object):
         except socket.timeout:
             self._reset()
             raise InfoBeamerQueryException("Timeout while reopening connection")
-        except socket.error, err:
+        except socket.error as err:
             self._reset()
             raise InfoBeamerQueryException("Cannot connect to %s:%s: %s" % (
                 self._host, self._port, err))
@@ -247,4 +247,4 @@ class InfoBeamerQuery(object):
 if __name__ == "__main__":
     import sys
     ib = InfoBeamerQuery(sys.argv[1] if len(sys.argv) > 1 else "127.0.0.1")
-    print "%s is running %s. current fps: %d, uptime: %dsec" % (ib.addr, ib.version, ib.fps, ib.uptime)
+    print("%s is running %s. current fps: %d, uptime: %dsec" % (ib.addr, ib.version, ib.fps, ib.uptime))
