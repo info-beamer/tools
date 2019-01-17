@@ -35,7 +35,7 @@ class InfoBeamerQueryException(Exception):
     pass
 
 class InfoBeamerQuery(object):
-    def __init__(self, host, port=4444):
+    def __init__(self, host='127.0.0.1', port=4444):
         self._sock = None
         self._conn = None
         self._host = host
