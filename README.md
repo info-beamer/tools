@@ -11,4 +11,4 @@ Directory | Purpose
 [visual-watchdog](visual-watchdog) | capture pi output and triggers if the output stays unchanged for too long
 [vncserver](vncserver) | a minimal vnc server for the raspberry
 [ibquery](ibquery) | query a running info-beamer
-
+[splitvideos](splitvideos) | split videos and synchronize with setup
