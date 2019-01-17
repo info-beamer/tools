@@ -110,8 +110,11 @@ class InfoBeamerQuery(object):
 
     def _reset(self, close=True):
         if close:
-            if self._conn: self._conn.close()
-            if self._sock: self._sock.close()
+            try:
+                if self._conn: self._conn.close()
+                if self._sock: self._sock.close()
+            except:
+                pass
         self._conn = None
         self._sock = None
 
