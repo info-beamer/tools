@@ -12,14 +12,13 @@ void die(const char *err) {
 }
 
 int opt(const char *name, int default_val) {
-    int val = default_val;
-    const char *str;
-    if ((str = getenv(name))) {
-        char *endptr = NULL;
-        val = strtol(str, &endptr, 10);
-        if (str[0] == '\0' || *endptr != '\0')
-            die("invalid option value");
-    }
+    const char *str = getenv(name);
+    if (!str)
+        return default_val;
+    char *endptr = NULL;
+    int val = strtol(str, &endptr, 10);
+    if (str[0] == '\0' || *endptr != '\0')
+        die("invalid option value");
     return val;
 }
 
