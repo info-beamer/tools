@@ -42,17 +42,18 @@
 
 int main(int argc, char *argv[]) {
     int quality = 75;
-    if (argc == 2) {
+    int screen = 0;
+    if (argc >= 2) {
         quality = atoi(argv[1]);
         if (quality < 10 || quality > 100) {
             fprintf(stderr, "invalid quality. must be between 10 and 100\n");
             return 1;
         }
     }
+    if (argc >= 3)
+        screen = atoi(argv[2]);
 
     bcm_host_init();
-
-    uint32_t screen = 0;
 
     DISPMANX_DISPLAY_HANDLE_T display = vc_dispmanx_display_open(screen);
     DISPMANX_MODEINFO_T info;
