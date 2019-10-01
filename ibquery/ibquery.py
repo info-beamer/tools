@@ -1,6 +1,6 @@
 # This program is licensed under the BSD 2-Clause License:
 #
-# Copyright (c) 2015, Florian Wesch <fw@dividuum.de>
+# Copyright (c) 2015-2019, Florian Wesch <fw@dividuum.de>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,6 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import re
+import json
 import socket
 from collections import namedtuple
 
@@ -158,6 +159,13 @@ class InfoBeamerQuery(object):
         "returns the FPS of the top level node"
         return float(self._send_cmd(
             "0.6", "*query/*fps",
+        ))
+
+    @property
+    def display(self):
+        "returns the display configuration"
+        return json.loads(self._send_cmd(
+            "1.0", "*query/*display",
         ))
 
     ResourceUsage = namedtuple("ResourceUsage", "user_time system_time memory")
