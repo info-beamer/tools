@@ -29,12 +29,9 @@ int main(void) {
 
     DISPMANX_DISPLAY_HANDLE_T display = vc_dispmanx_display_open(0);
 
-    uint32_t screen_w, screen_h;
-    if (graphics_get_display_size(display, &screen_w, &screen_h) < 0)
-        die("cannot get resolution");
-
     DISPMANX_MODEINFO_T info;
     vc_dispmanx_display_get_info(display, &info);
+    uint32_t screen_w = info.width, screen_h = info.height;
 
     unsigned char image[ICON.width * ICON.height * ICON.bytes_per_pixel];
     ICON_RUN_LENGTH_DECODE(
