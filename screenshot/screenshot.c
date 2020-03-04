@@ -36,6 +36,10 @@
 #include "bcm_host.h"
 #include "jpeglib.h"
 
+#ifndef ALIGN_UP
+#define ALIGN_UP(x,y)  ((x + (y)-1) & ~((y)-1))
+#endif
+
 int main(int argc, char *argv[]) {
     int quality = 75;
     int screen = 0;
@@ -57,10 +61,10 @@ int main(int argc, char *argv[]) {
     int ret = vc_dispmanx_display_get_info(display, &info);
     assert(ret == 0);
 
-    int pitch = info.width * 3;
+    int pitch = ALIGN_UP(2 * info.width, 32);
 
     uint32_t vc_image_ptr;
-    VC_IMAGE_TYPE_T type = VC_IMAGE_RGB888;
+    VC_IMAGE_TYPE_T type = VC_IMAGE_RGB565;
     DISPMANX_RESOURCE_HANDLE_T resource = vc_dispmanx_resource_create(
         type, info.width, info.height, &vc_image_ptr
     );
@@ -73,7 +77,7 @@ int main(int argc, char *argv[]) {
 
     unsigned char *image = malloc(pitch * info.height);
     assert(image);
-    vc_dispmanx_resource_read_data(resource, &rect, image, pitch);
+    vc_dispmanx_resource_read_data(resource, &rect, image, info.width * 2);
 
     ret = vc_dispmanx_resource_delete(resource);
     assert(ret == 0);
@@ -97,8 +101,17 @@ int main(int argc, char *argv[]) {
     jpeg_set_quality(&cinfo, quality, TRUE);
     jpeg_start_compress(&cinfo, TRUE);
 
+    int row_stride = cinfo.image_width * 3;
     while (cinfo.next_scanline < cinfo.image_height) {
-        JSAMPROW row_pointer[1] = {image + pitch * cinfo.next_scanline};
+        unsigned char row[row_stride];
+        unsigned char *dst = &row[0];
+        uint16_t *src = (uint16_t*)(image + pitch * cinfo.next_scanline);
+        for (int x = 0; x < cinfo.image_width; x++, src++) {
+            *dst++ = ((*src & 0xf800) >> 11) << 3;
+            *dst++ = ((*src & 0x07e0) >>  5) << 2;
+            *dst++ = ((*src & 0x001f) >>  0) << 3;
+        }
+        JSAMPROW row_pointer[1] = {row};
         jpeg_write_scanlines(&cinfo, row_pointer, 1);
     }
     jpeg_finish_compress(&cinfo);
