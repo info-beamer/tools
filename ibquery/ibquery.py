@@ -1,6 +1,6 @@
 # This program is licensed under the BSD 2-Clause License:
 #
-# Copyright (c) 2015-2019, Florian Wesch <fw@dividuum.de>
+# Copyright (c) 2015-2021, Florian Wesch <fw@dividuum.de>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -49,8 +49,8 @@ class InfoBeamerQuery(object):
             return
         try:
             self._sock = socket.create_connection((self._host, self._port), self._timeout)
-            self._conn = self._sock.makefile()
-            intro = self._conn.readline()
+            self._conn = self._sock.makefile(mode='rwb')
+            intro = self._conn.readline().decode('utf8')
         except socket.timeout:
             self._reset()
             raise InfoBeamerQueryException("Timeout while reopening connection")
@@ -65,7 +65,7 @@ class InfoBeamerQuery(object):
         self._version = m.group(1)
 
     def _parse_line(self):
-        line = self._conn.readline()
+        line = self._conn.readline().decode('utf8')
         if not line:
             return None
         return line.rstrip()
@@ -73,7 +73,7 @@ class InfoBeamerQuery(object):
     def _parse_multi_line(self):
         lines = []
         while 1:
-            line = self._conn.readline()
+            line = self._conn.readline().decode('utf8')
             if not line:
                 return None
             line = line.rstrip()
@@ -91,7 +91,7 @@ class InfoBeamerQuery(object):
                     "%s or higher required, %s found" % (min_version, self._version)
                 )
             try:
-                self._conn.write(cmd + "\n")
+                self._conn.write(cmd.encode('utf8') + b"\n")
                 self._conn.flush()
                 response = self._parse_multi_line() if multiline else self._parse_line()
                 if response is None:
