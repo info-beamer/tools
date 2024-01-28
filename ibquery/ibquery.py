@@ -1,6 +1,6 @@
 # This program is licensed under the BSD 2-Clause License:
 #
-# Copyright (c) 2015-2021, Florian Wesch <fw@dividuum.de>
+# Copyright (c) 2015-2024, Florian Wesch <fw@dividuum.de>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,9 +27,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import re
-import json
-import socket
+import re, json, socket, time
 from collections import namedtuple
 
 class InfoBeamerQueryException(Exception):
@@ -109,6 +107,59 @@ class InfoBeamerQuery(object):
                 continue
         raise InfoBeamerQueryException("Failed to get a response")
 
+    def _read_raw_exact(self, size):
+        remaining = size
+        chunks = []
+        while remaining:
+            chunk = self._sock.recv(min(2**16, remaining))
+            if not chunk:
+                return None
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        return b''.join(chunks)
+
+    def _screenshot(self, display_idx):
+        min_version = '2.0'
+        for retry in (1, 2, 3):
+            self._reconnect()
+            if self._version <= min_version:
+                raise InfoBeamerQueryException(
+                    "This query is not implemented in your version of info-beamer. "
+                    "%s or higher required, %s found" % (min_version, self._version)
+                )
+            try:
+                self._conn.write(('*screenshot/%d' % display_idx).encode('utf8') + b"\n")
+                self._conn.flush()
+                resp = self._read_raw_exact(5)
+                print(resp)
+                if not resp:
+                    self._reset()
+                    continue
+                elif resp == b'data\n':
+                    hdr = self._read_raw_exact(20)
+                    if not hdr:
+                        self._reset()
+                        continue
+                    w, h, size = int(hdr[0:4]), int(hdr[5:9]), int(hdr[10:])
+                    jpg = self._read_raw_exact(size)
+                    return jpg
+                elif resp == b'busy\n':
+                    time.sleep(0.04)
+                    continue
+                elif resp == b'fail\n':
+                    return None
+            except socket.error:
+                self._reset()
+                continue
+            except socket.timeout:
+                self._reset()
+                raise InfoBeamerQueryException("Timeout waiting for response")
+            except Exception:
+                self._reset()
+                continue
+        raise InfoBeamerQueryException("Failed to get a response")
+
+
     def _reset(self, close=True):
         if close:
             try:
@@ -125,6 +176,24 @@ class InfoBeamerQuery(object):
 
     def close(self):
         self._reset()
+
+    def icon_wifi_on(self, x=10, y=10):
+        "Activates the wifi overlay icon"
+        return self._send_cmd(
+            "2.0", "*icon/wifi/on/%d,%d" % (x, y)
+        ) == "ok"
+
+    def icon_wifi_off(self):
+        "Deactivates the wifi overlay icon"
+        return self._send_cmd(
+            "2.0", "*icon/wifi/off"
+        ) == "ok"
+
+    def icon_devmode(self):
+        "Activates the devmode overlay icon"
+        return self._send_cmd(
+            "2.0", "*icon/devmode"
+        ) == "ok"
 
     @property
     def ping(self):
@@ -198,6 +267,10 @@ class InfoBeamerQuery(object):
             "0.9.3", "*query/*nodes",
         ).split(',')
         return [] if not nodes[0] else nodes
+
+    def screenshot(self, display_idx):
+        "create a snapshot to the current display output"
+        return self._screenshot(display_idx)
 
     class Node(object):
         def __init__(self, ib, path):
