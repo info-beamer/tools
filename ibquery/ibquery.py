@@ -95,7 +95,11 @@ class InfoBeamerQuery(object):
                 if response is None:
                     self._reset()
                     continue
+                if response == 'deny':
+                    raise InfoBeamerQueryException("Access denied: Remote access is restricted")
                 return response
+            except InfoBeamerQueryException:
+                raise
             except socket.error:
                 self._reset()
                 continue
@@ -119,7 +123,22 @@ class InfoBeamerQuery(object):
         return b''.join(chunks)
 
     def _screenshot(self, display_idx):
-        min_version = '2.0'
+        if display_idx is None:
+            return self._jpeg('*screenshot', min_version='2.3')
+        else:
+            return self._jpeg('*screenshot/%d' % display_idx, min_version='2.0')
+    def _preview(self, display_idx):
+        if display_idx is None:
+            return self._jpeg('*preview', min_version='2.3')
+        else:
+            return self._jpeg('*preview/%d' % display_idx, min_version='2.2')
+    def _thumb(self, display_idx):
+        if display_idx is None:
+            return self._jpeg('*thumb', min_version='2.3')
+        else:
+            return self._jpeg('*thumb/%d' % display_idx, min_version='2.3')
+
+    def _jpeg(self, cmd, min_version):
         for retry in (1, 2, 3):
             self._reconnect()
             if self._version <= min_version:
@@ -128,13 +147,17 @@ class InfoBeamerQuery(object):
                     "%s or higher required, %s found" % (min_version, self._version)
                 )
             try:
-                self._conn.write(('*screenshot/%d' % display_idx).encode('utf8') + b"\n")
+                self._conn.write(cmd.encode('utf8') + b"\n")
                 self._conn.flush()
+                # Snapshotting and downscaling can be slow for huge resolutions
+                self._sock.settimeout(10)
                 resp = self._read_raw_exact(5)
-                print(resp)
+                self._sock.settimeout(self._timeout)
                 if not resp:
                     self._reset()
                     continue
+                elif resp == b'deny\n':
+                    raise InfoBeamerQueryException("Access denied: Remote access is restricted")
                 elif resp == b'data\n':
                     hdr = self._read_raw_exact(20)
                     if not hdr:
@@ -148,6 +171,8 @@ class InfoBeamerQuery(object):
                     continue
                 elif resp == b'fail\n':
                     return None
+            except InfoBeamerQueryException:
+                raise
             except socket.error:
                 self._reset()
                 continue
@@ -193,6 +218,12 @@ class InfoBeamerQuery(object):
         "Activates the devmode overlay icon"
         return self._send_cmd(
             "2.0", "*icon/devmode"
+        ) == "ok"
+
+    def internal(self, arg):
+        "triggers internal event"
+        return self._send_cmd(
+            "2.0", "*internal/%s" % arg
         ) == "ok"
 
     @property
@@ -268,9 +299,17 @@ class InfoBeamerQuery(object):
         ).split(',')
         return [] if not nodes[0] else nodes
 
-    def screenshot(self, display_idx):
-        "create a snapshot to the current display output"
+    def screenshot(self, display_idx=None):
+        "create a snapshot of the current display output"
         return self._screenshot(display_idx)
+
+    def preview(self, display_idx=None):
+        "create a small preview snapshot of the current display output (max 640)"
+        return self._preview(display_idx)
+
+    def thumb(self, display_idx=None):
+        "create a tiny thumbnail snapshot of the current display output (max 256)"
+        return self._thumb(display_idx=None)
 
     class Node(object):
         def __init__(self, ib, path):
@@ -297,7 +336,7 @@ class InfoBeamerQuery(object):
                 "0.6", "%s%s" % ("*raw/" if raw else '', self._path),
             )
             if status != 'ok!':
-                raise InfoBeamerQueryException("Cannot connect to node %s" % self._path)
+                raise InfoBeamerQueryException("Cannot connect to node %s (%s)" % (self._path, status))
             sock = self._ib._sock
             sock.settimeout(None)
             return self._ib._conn
@@ -324,6 +363,13 @@ class InfoBeamerQuery(object):
 
     def __repr__(self):
         return "<info-beamer@%s>" % self.addr
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+        return False
 
 if __name__ == "__main__":
     import sys
